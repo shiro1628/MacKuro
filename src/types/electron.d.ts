@@ -19,7 +19,7 @@ declare global {
       devserverDetect: (projectPath: string) => Promise<{ name: string; script: string } | null>
       codexInvoke: (opts: { mode: 'review' | 'plan' | 'research'; input: string; context?: string; projectPath?: string }) => Promise<{ success: boolean; output: string; error: string }>
       codexStatus: () => Promise<{ available: boolean }>
-      usageSummary: (projectPath?: string) => Promise<{ claudeCost: number; codexCost: number; codexTokens: number; codexEstimated: boolean; updatedAt: number }>
+      usageSummary: (projectPath?: string) => Promise<{ claudeCost: number; claudeTokens: number; claudeInputTokens: number; claudeOutputTokens: number; codexCost: number; codexTokens: number; codexEstimated: boolean; updatedAt: number }>
       onCodexStream: (cb: (chunk: string) => void) => () => void
       onExternalInject: (cb: (payload: { code: string; error?: string; file?: string; lines?: string }) => void) => () => void
       getServerPort: () => Promise<number>

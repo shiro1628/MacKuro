@@ -421,7 +421,13 @@ function jsonlFiles(dir: string): string[] {
 }
 
 ipcMain.handle('usage:summary', async (_, { projectPath }: { projectPath?: string }) => {
-  const claudeSessions = new Map<string, number>()
+  const claudeSessions = new Map<string, {
+    cost: number
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+  }>()
   const projectKey = projectPath ? projectPath.replaceAll('/', '-') : ''
   const claudeRoot = join(homedir(), '.claude', 'projects')
   const claudeDirs = projectKey && existsSync(join(claudeRoot, projectKey))
@@ -431,9 +437,19 @@ ipcMain.handle('usage:summary', async (_, { projectPath }: { projectPath?: strin
       for (const line of readFileSync(file, 'utf8').split('\n')) {
         if (!line) continue
         const item = JSON.parse(line)
+        const sessionId = item.sessionId ?? file
+        const previous = claudeSessions.get(sessionId) ?? { cost: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
         if (item.type === 'cost-state' && typeof item.totalCostUSD === 'number') {
-          claudeSessions.set(item.sessionId, Math.max(claudeSessions.get(item.sessionId) ?? 0, item.totalCostUSD))
+          previous.cost = Math.max(previous.cost, item.totalCostUSD)
         }
+        if (item.type === 'assistant' && item.message?.usage) {
+          const usage = item.message.usage
+          previous.input += Number(usage.input_tokens ?? 0)
+          previous.output += Number(usage.output_tokens ?? 0)
+          previous.cacheRead += Number(usage.cache_read_input_tokens ?? 0)
+          previous.cacheWrite += Number(usage.cache_creation_input_tokens ?? 0)
+        }
+        claudeSessions.set(sessionId, previous)
       }
     } catch {}
   }
@@ -465,8 +481,14 @@ ipcMain.handle('usage:summary', async (_, { projectPath }: { projectPath?: strin
   const codexOutputRate = 14 / 1_000_000
   const codexTokens = [...codexSessions.values()].reduce((sum, value) => sum + value.input + value.output, 0)
   const codexCost = [...codexSessions.values()].reduce((sum, value) => sum + value.input * codexInputRate + value.output * codexOutputRate, 0)
+  const claudeTokens = [...claudeSessions.values()].reduce((sum, value) => sum + value.input + value.output + value.cacheRead + value.cacheWrite, 0)
+  const claudeInputTokens = [...claudeSessions.values()].reduce((sum, value) => sum + value.input, 0)
+  const claudeOutputTokens = [...claudeSessions.values()].reduce((sum, value) => sum + value.output, 0)
   return {
-    claudeCost: [...claudeSessions.values()].reduce((sum, value) => sum + value, 0),
+    claudeCost: [...claudeSessions.values()].reduce((sum, value) => sum + value.cost, 0),
+    claudeTokens,
+    claudeInputTokens,
+    claudeOutputTokens,
     codexCost,
     codexTokens,
     codexEstimated: true,
