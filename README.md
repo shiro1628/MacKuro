@@ -2,29 +2,12 @@
 
 macOS 전용 AI 개발 워크스페이스입니다. 검은 고양이와 해골 투구를 콘셉트로 하며, Claude가 코딩을 담당하고 Codex가 리뷰와 리서치를 담당합니다.
 
-## 화면 미리보기
+## 실제 기능 화면
 
-### 워크스페이스
+최근 MacKuro 실행 화면입니다. Worktree 변경사항, Codex Review, 자동 리뷰 상태,
+Agy IDE 연동 버튼, 터미널과 콘솔을 한 화면에서 확인할 수 있습니다.
 
-![MacKuro 워크스페이스](docs/workspace.png)
-
-### 프로젝트 시작 화면
-
-![MacKuro 시작 화면](docs/splash.jpg)
-
-### 브라우저 패널
-
-![공유 브라우저 패널](docs/browser.png)
-
-### 컨텍스트 메뉴
-
-![MacKuro 컨텍스트 메뉴](docs/context-menu.png)
-
-### 터미널 오류 안내
-
-![터미널 오류 안내](docs/cursor-error.png)
-
-![터미널 오류 상세 화면](docs/cursor-error2.png)
+![MacKuro Worktree·Codex Review·Agy IDE 화면](docs/mackuro-workspace-redacted.png)
 
 ## 구성
 
