@@ -9,7 +9,7 @@ export default function Toolbar() {
   const [browserPort, setBrowserPort] = useState<number | null>(null)
   const [agyIdeOpen, setAgyIdeOpen] = useState(false)
   const [codexAvailable, setCodexAvailable] = useState(false)
-  const [usage, setUsage] = useState({ claudeCost: 0, claudeTokens: 0, claudeInputTokens: 0, claudeOutputTokens: 0, codexCost: 0, codexTokens: 0, codexEstimated: true })
+  const [usage, setUsage] = useState({ claudeCost: 0, claudeEstimated: true, claudeTokens: 0, claudeInputTokens: 0, claudeOutputTokens: 0, codexCost: 0, codexTokens: 0, codexEstimated: true })
 
   useEffect(() => {
     const offReady = window.kuro.onServerReady(port => {
@@ -138,9 +138,9 @@ return (
       )}
 
       <div className="titlebar-nodrag ai-usage flex items-center gap-1.5 rounded-md border border-white/[0.06] bg-black/20 px-1.5 py-1"
-        title={`로컬 로그 기준 누적 사용량\nClaude: ${formatTokens(usage.claudeTokens)} tokens / $${usage.claudeCost.toFixed(2)}\nCodex: ${formatTokens(usage.codexTokens)} tokens / $${usage.codexCost.toFixed(2)}${usage.codexEstimated ? ' (추정)' : ''}`}>
-        <span className="ai-usage-chip active"><i />Claude {formatTokens(usage.claudeTokens)}</span>
-        <span className={`ai-usage-chip ${codexAvailable ? 'available codex' : ''}`}><i />Codex {formatTokens(usage.codexTokens)}</span>
+        title={`로컬 로그 기준 누적 비용\nClaude: $${usage.claudeCost.toFixed(2)}${usage.claudeEstimated ? ' (추정)' : ''} · ${formatTokens(usage.claudeTokens)} tokens\nCodex: $${usage.codexCost.toFixed(2)}${usage.codexEstimated ? ' (추정)' : ''} · ${formatTokens(usage.codexTokens)} tokens`}>
+        <span className="ai-usage-chip active"><i />Claude ${usage.claudeCost.toFixed(2)}</span>
+        <span className={`ai-usage-chip ${codexAvailable ? 'available codex' : ''}`}><i />Codex ${usage.codexCost.toFixed(2)}</span>
       </div>
 
       <div className="titlebar-nodrag mac-toolbar-actions flex items-center gap-1 rounded-lg border border-white/[0.06] bg-black/20 p-1">

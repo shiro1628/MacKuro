@@ -484,8 +484,20 @@ ipcMain.handle('usage:summary', async (_, { projectPath }: { projectPath?: strin
   const claudeTokens = [...claudeSessions.values()].reduce((sum, value) => sum + value.input + value.output + value.cacheRead + value.cacheWrite, 0)
   const claudeInputTokens = [...claudeSessions.values()].reduce((sum, value) => sum + value.input, 0)
   const claudeOutputTokens = [...claudeSessions.values()].reduce((sum, value) => sum + value.output, 0)
+  // Claude Code subscription logs often report cost-state as zero. In that
+  // case show a clearly estimated API-equivalent amount from usage records.
+  const claudeEstimated = [...claudeSessions.values()].some(value => value.cost === 0 && value.input + value.output > 0)
+  const claudeCost = [...claudeSessions.values()].reduce((sum, value) => sum + (
+    value.cost > 0
+      ? value.cost
+      : value.input * (5 / 1_000_000)
+        + value.output * (25 / 1_000_000)
+        + value.cacheRead * (0.5 / 1_000_000)
+        + value.cacheWrite * (6.25 / 1_000_000)
+  ), 0)
   return {
-    claudeCost: [...claudeSessions.values()].reduce((sum, value) => sum + value.cost, 0),
+    claudeCost,
+    claudeEstimated,
     claudeTokens,
     claudeInputTokens,
     claudeOutputTokens,

@@ -53,7 +53,7 @@ contextBridge.exposeInMainWorld('kuro', {
   codexInvoke: (opts: { mode: 'review' | 'plan' | 'research'; input: string; context?: string; projectPath?: string }) =>
     ipcRenderer.invoke('codex:invoke', opts),
   codexStatus: (): Promise<{ available: boolean }> => ipcRenderer.invoke('codex:status'),
-  usageSummary: (projectPath?: string): Promise<{ claudeCost: number; claudeTokens: number; claudeInputTokens: number; claudeOutputTokens: number; codexCost: number; codexTokens: number; codexEstimated: boolean; updatedAt: number }> =>
+  usageSummary: (projectPath?: string): Promise<{ claudeCost: number; claudeEstimated: boolean; claudeTokens: number; claudeInputTokens: number; claudeOutputTokens: number; codexCost: number; codexTokens: number; codexEstimated: boolean; updatedAt: number }> =>
     ipcRenderer.invoke('usage:summary', { projectPath }),
   onCodexStream: (cb: (chunk: string) => void) => {
     const fn = (_: Electron.IpcRendererEvent, { chunk }: { chunk: string }) => cb(chunk)
