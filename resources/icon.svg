@@ -11,6 +11,9 @@
     </filter>
   </defs>
 
+  <!-- Opaque near-black base prevents macOS from adding a gray fallback tile. -->
+  <rect width="512" height="512" fill="#090a0d"/>
+
   <!-- Left ear (outer) -->
   <polygon points="100,260 148,82 238,192" fill="#0e0e0e"/>
   <!-- Right ear (outer) -->
