@@ -1,0 +1,73 @@
+{
+  "name": "mackuro",
+  "version": "0.1.0",
+  "description": "macOS AI development workspace — Claude coder + Codex reviewer",
+  "author": "Shiro",
+  "main": "out/main/index.js",
+  "allowScripts": {
+    "0": "node-pty",
+    "electron@31.7.7": true,
+    "esbuild@0.21.5": true,
+    "node-pty@1.1.0": true,
+    "sharp@0.33.5": true
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "package": "electron-vite build && electron-builder --mac --publish=never",
+    "postinstall": "electron-builder install-app-deps && node scripts/fix-node-pty-permissions.mjs"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "node-pty": "^1.0.0",
+    "react-markdown": "^10.1.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.19",
+    "electron": "^44.4.3",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "postcss": "^8.4.38",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.3.0"
+  },
+  "build": {
+    "appId": "com.mackuro.app",
+    "productName": "MacKuro",
+    "directories": {
+      "output": "../kuro-dist"
+    },
+    "icon": "resources/icon.png",
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "scripts",
+        "to": "scripts"
+      },
+      {
+        "from": "resources/icon.png",
+        "to": "icon.png"
+      }
+    ]
+  }
+}

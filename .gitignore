@@ -1,0 +1,51 @@
+# Antigravity CLI session files
+.antigravitycli/
+
+# Dependencies
+node_modules/
+cursor-extension/node_modules/
+
+# Build outputs
+out/
+dist/
+release/
+cursor-extension/out/
+cursor-extension/*.vsix
+agy-extension/*.vsix
+
+# electron-vite cache
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Electron builder cache
+electron-builder-cache/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local project state
+.kuro/
+.codex/
+.claude/
