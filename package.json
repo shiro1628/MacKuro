@@ -48,7 +48,7 @@
     "directories": {
       "output": "../kuro-dist"
     },
-    "icon": "resources/icon.png",
+    "icon": "resources/icon.icns",
     "mac": {
       "target": [
         "dmg",
