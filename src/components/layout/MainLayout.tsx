@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import Toolbar from '../toolbar/Toolbar'
 import ClaudePanel from '../panels/ClaudePanel'
-import CodexPanel from '../panels/CodexPanel'
-import DevServerPanel from '../panels/DevServerPanel'
+import CodexPanel from '../panels/codex/CodexPanel'
+import DevServerPanel from '../panels/devserver/DevServerPanel'
 import ConsolePanel from '../panels/ConsolePanel'
 
 export default function MainLayout() {
@@ -56,7 +56,7 @@ export default function MainLayout() {
     <div className="flex flex-col h-screen overflow-hidden">
       <Toolbar />
 
-      <div ref={containerRef} className="flex-1 flex flex-col overflow-hidden">
+      <div ref={containerRef} className="relative flex-1 flex flex-col overflow-hidden">
         {/* Main area (above console) */}
         <div className="flex flex-1 overflow-hidden" style={{ marginBottom: bottomSplit + 4 + 'px' }}>
           {/* Left: Claude */}

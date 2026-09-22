@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-contextBridge.exposeInMainWorld('kuro', {
+const api = {
   // PTY
   ptySpawn: (opts: { id: string; cwd: string; command: string; args?: string[] }) =>
     ipcRenderer.invoke('pty:spawn', opts),
@@ -13,12 +13,12 @@ contextBridge.exposeInMainWorld('kuro', {
   onPtyData: (cb: (id: string, data: string) => void) => {
     const fn = (_: Electron.IpcRendererEvent, { id, data }: { id: string; data: string }) => cb(id, data)
     ipcRenderer.on('pty:data', fn)
-    return () => ipcRenderer.off('pty:data', fn)
+    return () => { ipcRenderer.off('pty:data', fn) }
   },
   onPtyExit: (cb: (id: string, code: number) => void) => {
     const fn = (_: Electron.IpcRendererEvent, { id, exitCode }: { id: string; exitCode: number }) => cb(id, exitCode)
     ipcRenderer.on('pty:exit', fn)
-    return () => ipcRenderer.off('pty:exit', fn)
+    return () => { ipcRenderer.off('pty:exit', fn) }
   },
 
   // Antigravity IDE
@@ -58,14 +58,14 @@ contextBridge.exposeInMainWorld('kuro', {
   onCodexStream: (cb: (chunk: string) => void) => {
     const fn = (_: Electron.IpcRendererEvent, { chunk }: { chunk: string }) => cb(chunk)
     ipcRenderer.on('codex:stream', fn)
-    return () => ipcRenderer.off('codex:stream', fn)
+    return () => { ipcRenderer.off('codex:stream', fn) }
   },
 
   // External inject (from the Agy IDE extension via HTTP server)
   onExternalInject: (cb: (payload: { code: string; error?: string; file?: string; lines?: string }) => void) => {
     const fn = (_: Electron.IpcRendererEvent, payload: any) => cb(payload)
     ipcRenderer.on('external:inject', fn)
-    return () => ipcRenderer.off('external:inject', fn)
+    return () => { ipcRenderer.off('external:inject', fn) }
   },
 
   // Shared browser (CDP)
@@ -82,12 +82,12 @@ contextBridge.exposeInMainWorld('kuro', {
   onBrowserLaunched: (cb: (info: { port: number; url: string }) => void) => {
     const fn = (_: Electron.IpcRendererEvent, info: any) => cb(info)
     ipcRenderer.on('browser:launched', fn)
-    return () => ipcRenderer.off('browser:launched', fn)
+    return () => { ipcRenderer.off('browser:launched', fn) }
   },
   onBrowserStopped: (cb: () => void) => {
     const fn = () => cb()
     ipcRenderer.on('browser:stopped', fn)
-    return () => ipcRenderer.off('browser:stopped', fn)
+    return () => { ipcRenderer.off('browser:stopped', fn) }
   },
 
   // HTTP server
@@ -95,11 +95,16 @@ contextBridge.exposeInMainWorld('kuro', {
   onServerReady: (cb: (port: number) => void) => {
     const fn = (_: Electron.IpcRendererEvent, { port }: { port: number }) => cb(port)
     ipcRenderer.on('server:ready', fn)
-    return () => ipcRenderer.off('server:ready', fn)
+    return () => { ipcRenderer.off('server:ready', fn) }
   },
   onServerError: (cb: (msg: string) => void) => {
     const fn = (_: Electron.IpcRendererEvent, msg: string) => cb(msg)
     ipcRenderer.on('server:error', fn)
-    return () => ipcRenderer.off('server:error', fn)
+    return () => { ipcRenderer.off('server:error', fn) }
   },
-})
+}
+
+/** The renderer's `window.kuro` surface, derived so it cannot drift. */
+export type KuroApi = typeof api
+
+contextBridge.exposeInMainWorld('kuro', api)

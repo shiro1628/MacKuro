@@ -1,5 +1,9 @@
 import { create } from 'zustand'
 
+// Entries can hold a whole diff, so keep far fewer of them than console lines.
+const MAX_CODEX_ENTRIES = 50
+const MAX_CONSOLE_ENTRIES = 500
+
 export interface CodexEntry {
   id: string
   mode: 'review' | 'plan' | 'research'
@@ -7,6 +11,7 @@ export interface CodexEntry {
   output: string
   timestamp: Date
   loading: boolean
+  error?: string
 }
 
 export interface ConsoleEntry {
@@ -44,6 +49,7 @@ interface AppStore {
   addCodexEntry: (entry: Omit<CodexEntry, 'id' | 'timestamp'>) => string
   appendCodexChunk: (id: string, chunk: string) => void
   finishCodexEntry: (id: string) => void
+  failCodexEntry: (id: string, error: string) => void
 
   log: (type: ConsoleEntry['type'], message: string) => void
 }
@@ -76,7 +82,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   addCodexEntry: (entry) => {
     const id = crypto.randomUUID()
     set(s => ({
-      codexEntries: [...s.codexEntries, { ...entry, id, timestamp: new Date() }],
+      codexEntries: [...s.codexEntries.slice(-(MAX_CODEX_ENTRIES - 1)), { ...entry, id, timestamp: new Date() }],
       activeCodexId: id,
     }))
     return id
@@ -96,6 +102,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
       activeCodexId: null,
     }))
   },
+  failCodexEntry: (id, error) => {
+    set(s => ({
+      codexEntries: s.codexEntries.map(e =>
+        e.id === id ? { ...e, loading: false, error } : e
+      ),
+      activeCodexId: null,
+    }))
+  },
 
   log: (type, message) => {
     const entry: ConsoleEntry = {
@@ -104,6 +118,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       type,
       message,
     }
-    set(s => ({ consoleEntries: [...s.consoleEntries.slice(-500), entry] }))
+    set(s => ({ consoleEntries: [...s.consoleEntries.slice(-(MAX_CONSOLE_ENTRIES - 1)), entry] }))
   },
 }))

@@ -13,6 +13,7 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
+    "typecheck": "tsc --noEmit",
     "build": "electron-vite build",
     "package": "electron-vite build && electron-builder --mac --publish=never",
     "postinstall": "electron-builder install-app-deps && node scripts/fix-node-pty-permissions.mjs"

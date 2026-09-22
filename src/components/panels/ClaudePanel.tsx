@@ -1,61 +1,68 @@
-import { useEffect, useRef, useState } from 'react'
-import { Terminal } from '@xterm/xterm'
-import { FitAddon } from '@xterm/addon-fit'
-import { WebLinksAddon } from '@xterm/addon-web-links'
-import '@xterm/xterm/css/xterm.css'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
+import { useTerminal } from '../../hooks/useTerminal'
 import SnippetInput from './SnippetInput'
 import { PawIcon } from '../KuroCat'
 import TermContextMenu from '../TermContextMenu'
 
+/**
+ * Heuristic for "this looks pasted from an editor" rather than typed. Plain
+ * indentation is deliberately not a signal on its own — indented prose and
+ * pasted logs matched it, and got wrapped in <snippet> against the user's
+ * intent. Require actual code punctuation or a keyword.
+ */
+function looksLikeCode(data: string): boolean {
+  const lines = data.split('\n')
+  if (lines.length < 3) return false
+  return /[{};()=>]/.test(data)                                                  // 코드 문법 문자
+    || /^\s*(const|let|var|def|fn|func|import|export|class|if|for|return)\b/m.test(data) // 키워드
+}
+
 export default function ClaudePanel() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const termRef = useRef<Terminal>()
-  const fitRef = useRef<FitAddon>()
   const { project, setClaudeRunning, log } = useAppStore()
   const claudeRunning = useAppStore(s => s.claudeRunning)
   const autoSnippet = useAppStore(s => s.autoSnippet)
   const claudeRestartSignal = useAppStore(s => s.claudeRestartSignal)
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; selection: string } | null>(null)
-  const autoSnippetRef = useRef(autoSnippet)
-  autoSnippetRef.current = autoSnippet  // 클로저 갱신 없이 최신값 참조
 
+  const { containerRef, termRef } = useTerminal({
+    ptyId: 'claude',
+    cwd: project?.path ?? '',
+    spawnArgs: ['-l', '-i', '-c', 'claude'],
+    enabled: !!project,
+    restartKey: `${project?.path}:${claudeRestartSignal}`,
+    fontSize: 13,
+    cursorColor: '#7c6af7',
+    selectionBackground: '#3a3a5c',
+    webLinks: true,
+    focusOnMount: true,
+    onInput: data => {
+      if (looksLikeCode(data) && autoSnippet) {
+        window.kuro.ptyWrite('claude', `<snippet>\n${data.trimEnd()}\n</snippet>\n`)
+        log('info', `코드 붙여넣기 → snippet 자동 래핑 (${data.split('\n').length}줄)`)
+      } else {
+        window.kuro.ptyWrite('claude', data)
+      }
+    },
+    onExit: (code, term) => {
+      setClaudeRunning(false)
+      term.write(`\r\n\x1b[90m[claude exited: ${code}]\x1b[0m\r\n`)
+      log('warn', `Claude Code exited (code ${code})`)
+    },
+    onSpawned: (result, term) => {
+      if (result.success) {
+        setClaudeRunning(true)
+        log('success', `Claude Code terminal started in ${project?.path}`)
+      } else {
+        term.write(`\x1b[31mFailed to start terminal: ${result.error}\x1b[0m\r\n`)
+        log('error', `Claude terminal spawn failed: ${result.error}`)
+      }
+    },
+  })
+
+  // Agy IDE extension에서 보내는 에러+코드 수신 → snippet 자동 주입
   useEffect(() => {
-    if (!containerRef.current || !project) return
-
-    const term = new Terminal({
-      theme: {
-        background: '#0f0f0f',
-        foreground: '#d4d4d4',
-        cursor: '#7c6af7',
-        selectionBackground: '#3a3a5c',
-      },
-      fontFamily: 'Cascadia Code, Consolas, monospace',
-      fontSize: 13,
-      lineHeight: 1.4,
-      cursorBlink: true,
-      scrollback: 5000,
-    })
-    const fit = new FitAddon()
-    const links = new WebLinksAddon()
-    term.loadAddon(fit)
-    term.loadAddon(links)
-    term.open(containerRef.current)
-    termRef.current = term
-    fitRef.current = fit
-
-    // 레이아웃 완료 후 fit (dimensions 에러 방지)
-    requestAnimationFrame(() => {
-      fit.fit()
-      window.kuro.ptyResize('claude', term.cols, term.rows)
-      term.focus()
-    })
-
-    const offData = window.kuro.onPtyData((id, data) => {
-      if (id === 'claude') term.write(data)
-    })
-    // Agy IDE extension에서 보내는 에러+코드 수신 → snippet 자동 주입
-    const offExternal = window.kuro.onExternalInject(({ code, error, file, lines }) => {
+    return window.kuro.onExternalInject(({ code, error, file, lines }) => {
       const attrs = [
         file ? `file="${file}"` : '',
         lines ? `lines="${lines}"` : '',
@@ -75,60 +82,7 @@ export default function ClaudePanel() {
       // 포커스를 Kuro로 가져옴
       window.focus()
     })
-
-    const offExit = window.kuro.onPtyExit((id, code) => {
-      if (id === 'claude') {
-        setClaudeRunning(false)
-        term.write(`\r\n\x1b[90m[claude exited: ${code}]\x1b[0m\r\n`)
-        log('warn', `Claude Code exited (code ${code})`)
-      }
-    })
-
-    term.onData(data => {
-      const lines = data.split('\n')
-      const isCodeLike = lines.length >= 3 && (
-        /[{};()=>]/.test(data) ||          // 코드 문법 문자
-        /^\s+(const|let|var|def|fn|func|import|export|class|if|for)\b/m.test(data) || // 들여쓴 키워드
-        /^\s{2,}/m.test(data)              // 들여쓰기 있음
-      )
-      if (isCodeLike && autoSnippetRef.current) {
-        const wrapped = `<snippet>\n${data.trimEnd()}\n</snippet>\n`
-        window.kuro.ptyWrite('claude', wrapped)
-        log('info', `코드 붙여넣기 → snippet 자동 래핑 (${lines.length}줄)`)
-      } else {
-        window.kuro.ptyWrite('claude', data)
-      }
-    })
-
-    window.kuro.ptySpawn({
-      id: 'claude',
-      cwd: project.path,
-      command: '/bin/zsh',
-      args: ['-l', '-i', '-c', 'claude'],
-    }).then(result => {
-      if (result.success) {
-        setClaudeRunning(true)
-        log('success', `Claude Code terminal started in ${project.path}`)
-      } else {
-        term.write(`\x1b[31mFailed to start terminal: ${result.error}\x1b[0m\r\n`)
-        log('error', `Claude terminal spawn failed: ${result.error}`)
-      }
-    })
-
-    const observer = new ResizeObserver(() => {
-      fit.fit()
-      window.kuro.ptyResize('claude', term.cols, term.rows)
-    })
-    observer.observe(containerRef.current)
-
-    return () => {
-      offData()
-      offExit()
-      offExternal()
-      observer.disconnect()
-      term.dispose()
-    }
-  }, [project?.path, claudeRestartSignal])
+  }, [])
 
   // 스니펫을 Claude PTY에 직접 주입
   const handleSnippetSend = (formatted: string) => {

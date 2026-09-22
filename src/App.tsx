@@ -28,12 +28,10 @@ export default function App() {
     setProject(path)
   }
 
-  // Cleanup PTYs on unmount
+  // Claude's terminal outlives its panel, so kill it here. Dev server tabs use
+  // per-tab ids (devserver-1, -2, …) and each pane kills its own on unmount.
   useEffect(() => {
-    return () => {
-      window.kuro.ptyKill('claude')
-      window.kuro.ptyKill('devserver')
-    }
+    return () => { window.kuro.ptyKill('claude') }
   }, [])
 
   if (!project) {
