@@ -19,18 +19,31 @@ const EMPTY: UsageSummary = {
   codexCost: 0, codexTokens: 0, codexEstimated: true,
 }
 
-/** Cumulative spend, re-read from the CLIs' local logs on a timer. */
-export function useUsageSummary(projectPath: string | undefined) {
-  const [usage, setUsage] = useState<UsageSummary>(EMPTY)
+export interface UsageView {
+  /** Machine-wide cumulative spend across every project's logs. */
+  total: UsageSummary
+  /** The open project's share of that total; undefined when no project is open. */
+  project?: UsageSummary
+}
+
+/**
+ * Cumulative spend, re-read from the CLIs' local logs on a timer. The chips
+ * show the machine-wide total; the per-project figure only feeds the tooltip.
+ */
+export function useUsageSummary(projectPath: string | undefined): UsageView {
+  const [view, setView] = useState<UsageView>({ total: EMPTY })
 
   useEffect(() => {
-    const refresh = () => window.kuro.usageSummary(projectPath).then(setUsage).catch(() => undefined)
+    const refresh = () => Promise.all([
+      window.kuro.usageSummary(),
+      projectPath ? window.kuro.usageSummary(projectPath) : Promise.resolve(undefined),
+    ]).then(([total, project]) => setView({ total, project })).catch(() => undefined)
     refresh()
     const timer = setInterval(refresh, REFRESH_MS)
     return () => clearInterval(timer)
   }, [projectPath])
 
-  return usage
+  return view
 }
 
 export function formatTokens(value: number) {
