@@ -1,4 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { ComfyStatus } from './ipc/comfyui'
+import type { MachineStats } from './ipc/local-ai'
+import type { OllamaStatus } from './ipc/ollama'
+
+type ActionResult = Promise<{ success: boolean; error?: string }>
 
 const api = {
   // PTY
@@ -50,13 +55,13 @@ const api = {
     ipcRenderer.invoke('devserver:detect', { projectPath }),
 
   // Codex CLI (codex)
-  codexInvoke: (opts: { mode: 'review' | 'plan' | 'research'; input: string; context?: string; projectPath?: string }) =>
+  codexInvoke: (opts: { mode: 'review' | 'plan' | 'research'; input: string; context?: string; projectPath?: string; streamId?: string }) =>
     ipcRenderer.invoke('codex:invoke', opts),
   codexStatus: (): Promise<{ available: boolean }> => ipcRenderer.invoke('codex:status'),
   usageSummary: (projectPath?: string): Promise<{ claudeCost: number; claudeEstimated: boolean; claudeTokens: number; claudeInputTokens: number; claudeOutputTokens: number; codexCost: number; codexTokens: number; codexEstimated: boolean; updatedAt: number }> =>
     ipcRenderer.invoke('usage:summary', { projectPath }),
-  onCodexStream: (cb: (chunk: string) => void) => {
-    const fn = (_: Electron.IpcRendererEvent, { chunk }: { chunk: string }) => cb(chunk)
+  onCodexStream: (cb: (chunk: string, streamId?: string) => void) => {
+    const fn = (_: Electron.IpcRendererEvent, { chunk, streamId }: { chunk: string; streamId?: string }) => cb(chunk, streamId)
     ipcRenderer.on('codex:stream', fn)
     return () => { ipcRenderer.off('codex:stream', fn) }
   },
@@ -89,6 +94,28 @@ const api = {
     ipcRenderer.on('browser:stopped', fn)
     return () => { ipcRenderer.off('browser:stopped', fn) }
   },
+
+  // Local AI (Ollama / ComfyUI)
+  localAiStatus: (): Promise<{ machine: MachineStats; ollama: OllamaStatus; comfy: ComfyStatus }> =>
+    ipcRenderer.invoke('localai:status'),
+  ollamaStart: (): ActionResult => ipcRenderer.invoke('ollama:start'),
+  ollamaStop: (): ActionResult => ipcRenderer.invoke('ollama:stop'),
+  ollamaLoad: (model: string, keepAlive: string | number): ActionResult => ipcRenderer.invoke('ollama:load', model, keepAlive),
+  ollamaUnload: (model: string): ActionResult => ipcRenderer.invoke('ollama:unload', model),
+  ollamaDelete: (model: string): ActionResult => ipcRenderer.invoke('ollama:delete', model),
+  ollamaPull: (model: string): ActionResult => ipcRenderer.invoke('ollama:pull', model),
+  ollamaCancelPull: (model: string): Promise<void> => ipcRenderer.invoke('ollama:cancel-pull', model),
+  onOllamaPullProgress: (cb: (p: { model: string; status: string; completed?: number; total?: number; done?: boolean; error?: string }) => void) => {
+    const fn = (_: Electron.IpcRendererEvent, payload: any) => cb(payload)
+    ipcRenderer.on('ollama:pull-progress', fn)
+    return () => { ipcRenderer.off('ollama:pull-progress', fn) }
+  },
+  comfyStart: (): ActionResult => ipcRenderer.invoke('comfy:start'),
+  comfyStop: (): ActionResult => ipcRenderer.invoke('comfy:stop'),
+  comfyFree: (): ActionResult => ipcRenderer.invoke('comfy:free'),
+  comfyOpenDesktop: (): ActionResult => ipcRenderer.invoke('comfy:open-desktop'),
+  comfyOpenUi: (): Promise<void> => ipcRenderer.invoke('comfy:open-ui'),
+  comfyLogs: (): Promise<string[]> => ipcRenderer.invoke('comfy:logs'),
 
   // HTTP server
   getServerPort: (): Promise<number> => ipcRenderer.invoke('server:getPort'),

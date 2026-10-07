@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAppStore } from '../../../store/useAppStore'
+import { useProjectStore } from '../../../store/projectStore'
 import CodexComposer from './CodexComposer'
 import CodexHeader from './CodexHeader'
 import EntryCard from './EntryCard'
@@ -11,12 +11,12 @@ import { useWorktree } from './hooks/useWorktree'
 import type { Mode } from './types'
 
 export default function CodexPanel() {
-  const entries = useAppStore(s => s.codexEntries)
-  const activeId = useAppStore(s => s.activeCodexId)
-  const project = useAppStore(s => s.project)
-  const log = useAppStore(s => s.log)
-  const pendingCodexInput = useAppStore(s => s.pendingCodexInput)
-  const setPendingCodexInput = useAppStore(s => s.setPendingCodexInput)
+  const entries = useProjectStore(s => s.codexEntries)
+  const activeId = useProjectStore(s => s.activeCodexId)
+  const project = useProjectStore(s => s.project)
+  const log = useProjectStore(s => s.log)
+  const pendingCodexInput = useProjectStore(s => s.pendingCodexInput)
+  const setPendingCodexInput = useProjectStore(s => s.setPendingCodexInput)
 
   const [mode, setMode] = useState<Mode>('review')
   const [input, setInput] = useState('')

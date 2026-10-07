@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useAppStore } from '../../../../store/useAppStore'
+import { useProjectStore } from '../../../../store/projectStore'
 import type { WorktreeStatus } from '../types'
 
 const POLL_MS = 4000
 
 /** Poll `git status` for the open project and create new worktrees. */
 export function useWorktree(projectPath: string | undefined) {
-  const log = useAppStore(s => s.log)
+  const log = useProjectStore(s => s.log)
   const [worktree, setWorktree] = useState<WorktreeStatus | null>(null)
 
   const refresh = useCallback(async () => {

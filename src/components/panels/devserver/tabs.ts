@@ -8,13 +8,10 @@ export interface TabInfo {
 
 let counter = 0
 
-export function newTab(label: string, command: string | null = null): TabInfo {
+/** The counter is shared by every open project, so ids stay unique without resets. */
+export function newTab(projectId: string, label: string, command: string | null = null): TabInfo {
   const n = ++counter
-  return { id: `t${n}`, label, ptyId: `devserver-${n}`, command }
-}
-
-export function resetTabCounter() {
-  counter = 0
+  return { id: `t${n}`, label, ptyId: `${projectId}:devserver-${n}`, command }
 }
 
 /**

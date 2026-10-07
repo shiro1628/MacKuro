@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useAppStore } from '../../../store/useAppStore'
+import { logToActive } from '../../../store/useAppStore'
 
 const AGY_POLL_MS = 3000
 
 /** Live state of the things the toolbar reports: server, browser, IDE, Codex. */
 export function useEnvironmentStatus() {
-  const log = useAppStore(s => s.log)
+  const log = logToActive
   const [serverPort, setServerPort] = useState<number | null>(null)
   const [browserRunning, setBrowserRunning] = useState(false)
   const [browserPort, setBrowserPort] = useState<number | null>(null)

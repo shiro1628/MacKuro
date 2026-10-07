@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import type { CodexEntry } from '../../../store/useAppStore'
+import type { CodexEntry } from '../../../store/projectStore'
 import ErrorBlock from './ErrorBlock'
 import ExpandModal from './ExpandModal'
 import VerdictBadge from './VerdictBadge'

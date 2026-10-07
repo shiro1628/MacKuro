@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
+import { useProjectStore, useProjectStoreApi } from '../../store/projectStore'
 import { useTerminal } from '../../hooks/useTerminal'
 import SnippetInput from './SnippetInput'
 import { PawIcon } from '../KuroCat'
@@ -19,14 +20,19 @@ function looksLikeCode(data: string): boolean {
 }
 
 export default function ClaudePanel() {
-  const { project, setClaudeRunning, log } = useAppStore()
-  const claudeRunning = useAppStore(s => s.claudeRunning)
+  const store = useProjectStoreApi()
+  const project = useProjectStore(s => s.project)
+  const projectId = useProjectStore(s => s.id)
+  const ptyId = useProjectStore(s => s.claudePtyId)
+  const setClaudeRunning = useProjectStore(s => s.setClaudeRunning)
+  const log = useProjectStore(s => s.log)
+  const claudeRunning = useProjectStore(s => s.claudeRunning)
+  const claudeRestartSignal = useProjectStore(s => s.claudeRestartSignal)
   const autoSnippet = useAppStore(s => s.autoSnippet)
-  const claudeRestartSignal = useAppStore(s => s.claudeRestartSignal)
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; selection: string } | null>(null)
 
   const { containerRef, termRef } = useTerminal({
-    ptyId: 'claude',
+    ptyId,
     cwd: project?.path ?? '',
     spawnArgs: ['-l', '-i', '-c', 'claude'],
     enabled: !!project,
@@ -38,10 +44,10 @@ export default function ClaudePanel() {
     focusOnMount: true,
     onInput: data => {
       if (looksLikeCode(data) && autoSnippet) {
-        window.kuro.ptyWrite('claude', `<snippet>\n${data.trimEnd()}\n</snippet>\n`)
+        window.kuro.ptyWrite(ptyId, `<snippet>\n${data.trimEnd()}\n</snippet>\n`)
         log('info', `코드 붙여넣기 → snippet 자동 래핑 (${data.split('\n').length}줄)`)
       } else {
-        window.kuro.ptyWrite('claude', data)
+        window.kuro.ptyWrite(ptyId, data)
       }
     },
     onExit: (code, term) => {
@@ -60,9 +66,31 @@ export default function ClaudePanel() {
     },
   })
 
-  // Agy IDE extension에서 보내는 에러+코드 수신 → snippet 자동 주입
+  // Coming back to this project: hand the keyboard to its Claude terminal.
+  const isActive = useAppStore(s => s.activeId === projectId)
+  useEffect(() => {
+    if (isActive) requestAnimationFrame(() => termRef.current?.focus())
+  }, [isActive])
+
+  // Sidebar activity: remember when Claude last printed, and flag output that
+  // arrives while this project is in the background. Throttled — the TUI
+  // spinner emits many chunks a second.
+  useEffect(() => {
+    return window.kuro.onPtyData(id => {
+      if (id !== ptyId) return
+      const now = Date.now()
+      const s = store.getState()
+      const background = useAppStore.getState().activeId !== projectId
+      if (now - s.lastOutputAt > 500 || (background && !s.unread)) {
+        store.setState({ lastOutputAt: now, unread: s.unread || background })
+      }
+    })
+  }, [ptyId, projectId])
+
+  // Agy IDE extension에서 보내는 에러+코드 수신 → snippet 자동 주입 (앞에 보이는 프로젝트만)
   useEffect(() => {
     return window.kuro.onExternalInject(({ code, error, file, lines }) => {
+      if (useAppStore.getState().activeId !== projectId) return
       const attrs = [
         file ? `file="${file}"` : '',
         lines ? `lines="${lines}"` : '',
@@ -76,20 +104,20 @@ export default function ClaudePanel() {
 
       // Bracketed paste로 감싸면 중간 \r이 Enter로 해석되지 않음
       const msg = parts.join('\n')
-      window.kuro.ptyWrite('claude', `\x1b[200~${msg}\x1b[201~\r`)
+      window.kuro.ptyWrite(ptyId, `\x1b[200~${msg}\x1b[201~\r`)
       log('success', `Agy IDE에서 에러 수신${file ? ` — ${file}${lines ? ':' + lines : ''}` : ''}`)
 
       // 포커스를 Kuro로 가져옴
       window.focus()
     })
-  }, [])
+  }, [ptyId, projectId])
 
   // 스니펫을 Claude PTY에 직접 주입
   const handleSnippetSend = (formatted: string) => {
     // Claude Code는 paste 이벤트 없이 raw 텍스트를 받으므로
     // 개행을 \r\n으로 변환하고 마지막에 Enter 전송
     const encoded = formatted.replace(/\n/g, '\r\n')
-    window.kuro.ptyWrite('claude', encoded + '\r')
+    window.kuro.ptyWrite(ptyId, encoded + '\r')
     log('info', `스니펫 주입: ${formatted.split('\n')[0].slice(0, 60)}…`)
   }
 
@@ -119,7 +147,7 @@ export default function ClaudePanel() {
         {ctxMenu && termRef.current && (
           <TermContextMenu
             x={ctxMenu.x} y={ctxMenu.y}
-            term={termRef.current} ptyId="claude"
+            term={termRef.current} ptyId={ptyId}
             selection={ctxMenu.selection}
             onClose={() => setCtxMenu(null)}
           />

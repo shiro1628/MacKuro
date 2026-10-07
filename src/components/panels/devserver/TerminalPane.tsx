@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAppStore } from '../../../store/useAppStore'
+import { useProjectStore } from '../../../store/projectStore'
 import { useTerminal } from '../../../hooks/useTerminal'
 import TermContextMenu from '../../TermContextMenu'
 import { spawnArgsFor, type TabInfo } from './tabs'
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function TerminalPane({ tab, active, projectPath, autoCommand }: Props) {
-  const log = useAppStore(s => s.log)
+  const log = useProjectStore(s => s.log)
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; selection: string } | null>(null)
 
   const { containerRef, termRef, refit } = useTerminal({

@@ -1,5 +1,4 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
-import Toolbar from '../toolbar/Toolbar'
 import ClaudePanel from '../panels/ClaudePanel'
 import CodexPanel from '../panels/codex/CodexPanel'
 import DevServerPanel from '../panels/devserver/DevServerPanel'
@@ -21,8 +20,8 @@ export default function MainLayout() {
       const pct = ((e.clientX - rect.left) / rect.width) * 100
       setColSplit(Math.max(30, Math.min(80, pct)))
     } else if (dragging.current === 'right-row') {
-      const rightTop = rect.top + 44 // toolbar height
-      const rightHeight = rect.height - 44 - bottomSplit - 4
+      const rightTop = rect.top
+      const rightHeight = rect.height - bottomSplit - 4
       const pct = ((e.clientY - rightTop) / rightHeight) * 100
       setRightRowSplit(Math.max(20, Math.min(80, pct)))
     } else if (dragging.current === 'bottom') {
@@ -53,9 +52,7 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <Toolbar />
-
+    <div className="flex flex-col h-full overflow-hidden">
       <div ref={containerRef} className="relative flex-1 flex flex-col overflow-hidden">
         {/* Main area (above console) */}
         <div className="flex flex-1 overflow-hidden" style={{ marginBottom: bottomSplit + 4 + 'px' }}>

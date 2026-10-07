@@ -3,6 +3,7 @@ import { registerBrowserIpc } from './browser'
 import { registerCodexIpc } from './codex'
 import { registerDevServerIpc } from './devserver'
 import { registerGitIpc } from './git'
+import { registerLocalAiIpc } from './local-ai'
 import { registerMcpIpc } from './mcp'
 import { registerPtyIpc } from './pty'
 import { registerSystemIpc } from './system'
@@ -19,4 +20,5 @@ export function registerIpc() {
   registerDevServerIpc()
   registerCodexIpc()
   registerUsageIpc()
+  registerLocalAiIpc()
 }

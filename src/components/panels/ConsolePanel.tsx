@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { useAppStore, type ConsoleEntry } from '../../store/useAppStore'
+import { useProjectStore, useProjectStoreApi, type ConsoleEntry } from '../../store/projectStore'
 import { PawIcon } from '../KuroCat'
 
 const typeStyle: Record<ConsoleEntry['type'], string> = {
@@ -17,7 +17,8 @@ const typeLabel: Record<ConsoleEntry['type'], string> = {
 }
 
 export default function ConsolePanel() {
-  const entries = useAppStore(s => s.consoleEntries)
+  const store = useProjectStoreApi()
+  const entries = useProjectStore(s => s.consoleEntries)
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function ConsolePanel() {
         <PawIcon size={11} className="text-gray-700" />
         Console
         <button
-          onClick={() => useAppStore.setState({ consoleEntries: [] })}
+          onClick={() => store.setState({ consoleEntries: [] })}
           className="ml-auto text-gray-700 hover:text-accent text-xs font-normal normal-case transition-colors"
         >
           clear

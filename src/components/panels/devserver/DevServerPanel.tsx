@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useAppStore } from '../../../store/useAppStore'
+import { useProjectStore } from '../../../store/projectStore'
 import TabBar from './TabBar'
 import TerminalPane from './TerminalPane'
-import { newTab, resetTabCounter, type TabInfo } from './tabs'
+import { newTab, type TabInfo } from './tabs'
 
 export default function DevServerPanel() {
-  const project = useAppStore(s => s.project)
-  const devServerCommand = useAppStore(s => s.devServerCommand)
+  const project = useProjectStore(s => s.project)
+  const devServerCommand = useProjectStore(s => s.devServerCommand)
+  const projectId = useProjectStore(s => s.id)
 
   const [tabs, setTabs] = useState<TabInfo[]>([])
   const [activeId, setActiveId] = useState<string>('')
@@ -14,14 +15,13 @@ export default function DevServerPanel() {
   // create initial tab when project opens
   useEffect(() => {
     if (!project) return
-    resetTabCounter()
-    const first = newTab(devServerCommand?.name ?? 'terminal')
+    const first = newTab(projectId, devServerCommand?.name ?? 'terminal')
     setTabs([first])
     setActiveId(first.id)
   }, [project?.path])
 
   const addTab = () => {
-    const tab = newTab('terminal')
+    const tab = newTab(projectId, 'terminal')
     setTabs(prev => [...prev, tab])
     setActiveId(tab.id)
   }
@@ -39,7 +39,7 @@ export default function DevServerPanel() {
   const replaceActiveTab = (command: string | null) => {
     const index = tabs.findIndex(t => t.id === activeId)
     if (index < 0) return
-    const fresh = newTab(tabs[index].label, command)
+    const fresh = newTab(projectId, tabs[index].label, command)
     setTabs(prev => {
       const next = [...prev]
       next[index] = fresh

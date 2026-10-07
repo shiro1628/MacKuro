@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Terminal } from '@xterm/xterm'
-import { useAppStore } from '../store/useAppStore'
+import { useProjectStore } from '../store/projectStore'
 
 interface Props {
   x: number
@@ -13,7 +13,8 @@ interface Props {
 
 export default function TermContextMenu({ x, y, term, ptyId, selection, onClose }: Props) {
   const menuRef = useRef<HTMLDivElement>(null)
-  const setPendingCodexInput = useAppStore(s => s.setPendingCodexInput)
+  const setPendingCodexInput = useProjectStore(s => s.setPendingCodexInput)
+  const claudePtyId = useProjectStore(s => s.claudePtyId)
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -64,7 +65,7 @@ export default function TermContextMenu({ x, y, term, ptyId, selection, onClose 
     if (!selection) return
     // Bracketed paste로 감싸면 중간 \r이 Enter로 해석되지 않음
     const text = selection.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimEnd()
-    window.kuro.ptyWrite('claude', `\x1b[200~${text}\x1b[201~\r`)
+    window.kuro.ptyWrite(claudePtyId, `\x1b[200~${text}\x1b[201~\r`)
     onClose()
   }
 

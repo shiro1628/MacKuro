@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import { registerServerIpc, startHttpServer, stopHttpServer } from './http-server'
 import { registerIpc } from './ipc'
+import { stopManagedComfy } from './ipc/comfyui'
 import { killAllPtys } from './ipc/pty'
 import { removeTokenFile, writeTokenFile } from './token'
 import { createWindow } from './window'
@@ -28,6 +29,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   killAllPtys()
+  stopManagedComfy()
   stopHttpServer()
   removeTokenFile()
   app.quit()

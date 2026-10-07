@@ -4,19 +4,33 @@ macOS 전용 AI 개발 워크스페이스입니다. 검은 고양이와 해골 �
 
 ## 실제 기능 화면
 
-최근 MacKuro 실행 화면입니다. Worktree 변경사항, Codex Review, 자동 리뷰 상태,
-Agy IDE 연동 버튼, 터미널과 콘솔을 한 화면에서 확인할 수 있습니다.
+최근 MacKuro 실행 화면입니다. 왼쪽 프로젝트 바에서 여러 프로젝트를 오가며,
+Claude 터미널, Codex Review, Worktree 변경사항, Dev Server 터미널과 콘솔을 한 화면에서 확인할 수 있습니다.
 
-![MacKuro Worktree·Codex Review·Agy IDE 화면](docs/mackuro-workspace-redacted.png)
+![MacKuro 프로젝트 바·Claude·Codex 화면](docs/mackuro-workspace.png)
+
+툴바 왼쪽 버튼이나 `⌘B`로 프로젝트 바를 닫으면 패널이 전체 폭으로 넓어집니다.
+
+![프로젝트 바를 닫은 화면](docs/mackuro-sidebar-hidden.png)
 
 ## 구성
 
+- 프로젝트 바: 여러 프로젝트를 동시에 열고 전환 (각 프로젝트의 Claude·터미널은 계속 실행)
 - Claude Code: macOS zsh 기반 인터랙티브 터미널
 - Codex: `codex exec` 기반 Review / Research 패널
 - Dev Server: 여러 개의 독립적인 zsh 터미널 탭
 - 공유 브라우저: Chrome 또는 Edge CDP 연결
 - Agy IDE 확장: 코드와 진단 정보를 MacKuro로 전송
 - Playwright MCP: Claude용 MCP 설정 자동 갱신
+
+## 단축키
+
+| 단축키 | 동작 |
+|---|---|
+| `⌘1` … `⌘9` | 프로젝트 전환 |
+| `⌘O` | 프로젝트 열기 |
+| `⌘⇧W` | 현재 프로젝트 닫기 |
+| `⌘B` | 프로젝트 바 열기 / 닫기 |
 
 ## 요구사항
 

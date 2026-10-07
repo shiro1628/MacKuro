@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import type { CodexEntry } from '../../../store/useAppStore'
+import { useProjectStore, type CodexEntry } from '../../../store/projectStore'
 import ErrorBlock from './ErrorBlock'
 import VerdictBadge from './VerdictBadge'
 import { mdComponents } from './markdown'
 import { modeColor, modeLabel, modeTag } from './types'
 
 export default function ExpandModal({ entry, onClose }: { entry: CodexEntry; onClose: () => void }) {
+  const claudePtyId = useProjectStore(s => s.claudePtyId)
   const [copied, setCopied] = useState(false)
   const [sent, setSent] = useState(false)
 
@@ -24,7 +25,7 @@ export default function ExpandModal({ entry, onClose }: { entry: CodexEntry; onC
 
   const handleSendToClaude = () => {
     const msg = `다음 ${modeLabel(entry.mode)} 결과를 참고해서 작업해줘:\n\n${entry.output}`
-    window.kuro.ptyWrite('claude', `\x1b[200~${msg}\x1b[201~`)
+    window.kuro.ptyWrite(claudePtyId, `\x1b[200~${msg}\x1b[201~`)
     setSent(true)
     setTimeout(() => { setSent(false); onClose() }, 800)
   }

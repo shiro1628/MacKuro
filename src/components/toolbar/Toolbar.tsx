@@ -1,30 +1,26 @@
 import { useAppStore } from '../../store/useAppStore'
+import { useProjectStore } from '../../store/projectStore'
 import KuroCat, { PawIcon } from '../KuroCat'
+import LocalAiButton from './LocalAiButton'
 import ToolbarActions from './ToolbarActions'
 import UsageChips from './UsageChips'
 import { useEnvironmentStatus } from './hooks/useEnvironmentStatus'
 import { useUsageSummary } from './hooks/useUsageSummary'
 
 export default function Toolbar() {
-  const project = useAppStore(s => s.project)
-  const claudeRunning = useAppStore(s => s.claudeRunning)
-  const devServerRunning = useAppStore(s => s.devServerRunning)
-  const devServerCommand = useAppStore(s => s.devServerCommand)
+  const project = useProjectStore(s => s.project)
+  const claudeRunning = useProjectStore(s => s.claudeRunning)
+  const devServerRunning = useProjectStore(s => s.devServerRunning)
+  const devServerCommand = useProjectStore(s => s.devServerCommand)
+  const restartClaude = useProjectStore(s => s.restartClaude)
+  const log = useProjectStore(s => s.log)
   const autoSnippet = useAppStore(s => s.autoSnippet)
-  const clearProject = useAppStore(s => s.clearProject)
   const toggleAutoSnippet = useAppStore(s => s.toggleAutoSnippet)
-  const restartClaude = useAppStore(s => s.restartClaude)
-  const log = useAppStore(s => s.log)
+  const sidebarHidden = useAppStore(s => s.sidebarHidden)
+  const toggleSidebarHidden = useAppStore(s => s.toggleSidebarHidden)
 
   const { serverPort, browserRunning, browserPort, agyIdeOpen, codexAvailable } = useEnvironmentStatus()
   const usage = useUsageSummary(project?.path)
-
-  const handleChangeProject = async () => {
-    if (browserRunning && project) await window.kuro.browserStop({ projectPath: project.path })
-    // Dev server tabs unmount with the layout and kill their own PTYs.
-    await window.kuro.ptyKill('claude')
-    clearProject()
-  }
 
   const handleOpenAgyIde = async () => {
     if (!project) return
@@ -59,7 +55,20 @@ export default function Toolbar() {
 
   return (
     <div className="titlebar-drag mac-toolbar flex items-center gap-2 h-11 bg-surface-1 border-b border-surface-border flex-shrink-0"
-      style={{ borderBottomColor: '#1a1a1a', paddingLeft: '88px', paddingRight: '16px' }}>
+      // With the sidebar hidden the traffic lights sit over the toolbar, so clear them.
+      style={{ borderBottomColor: '#1a1a1a', paddingLeft: sidebarHidden ? '80px' : '16px', paddingRight: '16px' }}>
+
+      <button
+        onClick={toggleSidebarHidden}
+        title={sidebarHidden ? '프로젝트 바 열기 (⌘B)' : '프로젝트 바 닫기 (⌘B)'}
+        className="titlebar-nodrag w-7 h-7 flex items-center justify-center rounded text-gray-500 hover:text-gray-200 hover:bg-surface-2 transition-colors"
+      >
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
+          <rect x="1.5" y="2.5" width="13" height="11" rx="2" />
+          <line x1="5.5" y1="2.5" x2="5.5" y2="13.5" />
+          {!sidebarHidden && <rect x="2" y="3" width="3.5" height="10" fill="currentColor" stroke="none" opacity="0.5" />}
+        </svg>
+      </button>
 
       {/* Logo */}
       <div className="titlebar-nodrag flex items-center gap-1.5 mr-1 select-none mac-toolbar-brand">
@@ -78,14 +87,6 @@ export default function Toolbar() {
         <PawIcon size={11} className="text-accent opacity-60 flex-shrink-0" />
         <span className="truncate">{project?.name ?? '—'}</span>
       </div>
-
-      {/* Change project */}
-      <button
-        onClick={handleChangeProject}
-        className="titlebar-nodrag px-2 py-1 text-xs text-gray-600 hover:text-gray-300 hover:bg-surface-2 rounded transition-colors"
-      >
-        변경
-      </button>
 
       <div className="flex-1 min-w-2" />
 
@@ -109,6 +110,8 @@ export default function Toolbar() {
       )}
 
       <UsageChips usage={usage} codexAvailable={codexAvailable} />
+
+      <LocalAiButton />
 
       <ToolbarActions
         hasProject={!!project}
