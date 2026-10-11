@@ -13,7 +13,8 @@ export default function App() {
   const sidebarHidden = useAppStore(s => s.sidebarHidden)
   const active = projects.find(p => p.id === activeId)
 
-  // ⌘1…⌘9 switch projects, ⌘O opens one, ⌘⇧W closes the current one, ⌘B shows/hides the sidebar.
+  // ⌘1…⌘9 switch projects, ⌘O opens one, ⌘⇧W closes the current one, ⌘B shows/hides the sidebar,
+  // ⌘⇧Enter opens the broadcast panel.
   // Capture phase so the focused xterm never sees these keys.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -29,6 +30,9 @@ export default function App() {
         closeProject(activeId)
       } else if (e.key === 'b' && !e.shiftKey) {
         useAppStore.getState().toggleSidebarHidden()
+      } else if (e.key === 'Enter' && e.shiftKey) {
+        const { broadcastOpen, setBroadcastOpen } = useAppStore.getState()
+        setBroadcastOpen(!broadcastOpen)
       } else {
         handled = false
       }

@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useStore } from 'zustand'
 import { closeProject, pickAndOpenProject, useAppStore, type Workspace } from '../../store/useAppStore'
+import { WORKING_WINDOW_MS } from '../../store/projectStore'
 
 const EXPANDED_WIDTH = 220
 // Wide enough to keep the macOS traffic lights clear.
 const COLLAPSED_WIDTH = 72
-// Claude's spinner prints constantly while it works; this much silence means it stopped.
-const WORKING_WINDOW_MS = 2500
 
 /** Stable per-path hue, so a project keeps its badge color across launches. */
 function hueOf(path: string) {

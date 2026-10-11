@@ -4,6 +4,8 @@ import { createStore, useStore, type StoreApi } from 'zustand'
 // Entries can hold a whole diff, so keep far fewer of them than console lines.
 const MAX_CODEX_ENTRIES = 50
 const MAX_CONSOLE_ENTRIES = 500
+// Claude's spinner prints constantly while it works; this much silence means it stopped.
+export const WORKING_WINDOW_MS = 2500
 
 export interface CodexEntry {
   id: string

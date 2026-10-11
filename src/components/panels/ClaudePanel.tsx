@@ -41,7 +41,8 @@ export default function ClaudePanel() {
     cursorColor: '#7c6af7',
     selectionBackground: '#3a3a5c',
     webLinks: true,
-    focusOnMount: true,
+    // A project started in the background (broadcast) must not steal the keyboard.
+    focusOnMount: useAppStore.getState().activeId === projectId,
     onInput: data => {
       if (looksLikeCode(data) && autoSnippet) {
         window.kuro.ptyWrite(ptyId, `<snippet>\n${data.trimEnd()}\n</snippet>\n`)

@@ -21,14 +21,19 @@ interface AppStore {
   /** Sidebar fully hidden (⌘B), as opposed to collapsed to the icon rail. */
   sidebarHidden: boolean
   autoSnippet: boolean       // 코드 붙여넣기 자동 snippet 래핑
+  /** Broadcast panel (send one prompt to many projects) is open. */
+  broadcastOpen: boolean
 
   addProject: (path: string, activate: boolean) => Workspace
   setActive: (id: string) => void
+  /** Mount a project's panels (starting its Claude) without bringing it forward. */
+  markVisited: (id: string) => void
   removeProject: (id: string) => void
   moveProject: (id: string, toIndex: number) => void
   toggleSidebar: () => void
   toggleSidebarHidden: () => void
   toggleAutoSnippet: () => void
+  setBroadcastOpen: (open: boolean) => void
 }
 
 let nextId = 0
@@ -39,6 +44,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sidebarCollapsed: false,
   sidebarHidden: false,
   autoSnippet: true,
+  broadcastOpen: false,
 
   addProject: (path, activate) => {
     const id = `p${++nextId}`
@@ -56,6 +62,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       activeId: id,
       projects: ws.visited ? s.projects : s.projects.map(p => p.id === id ? { ...p, visited: true } : p),
     }))
+  },
+  markVisited: (id) => {
+    set(s => ({ projects: s.projects.map(p => p.id === id && !p.visited ? { ...p, visited: true } : p) }))
   },
   removeProject: (id) => {
     const { projects, activeId } = get()
@@ -80,6 +89,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   toggleSidebar: () => set(s => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   toggleSidebarHidden: () => set(s => ({ sidebarHidden: !s.sidebarHidden })),
   toggleAutoSnippet: () => set(s => ({ autoSnippet: !s.autoSnippet })),
+  setBroadcastOpen: (open) => set({ broadcastOpen: open }),
 }))
 
 export function activeWorkspace(): Workspace | undefined {
