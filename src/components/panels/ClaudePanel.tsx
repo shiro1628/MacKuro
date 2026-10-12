@@ -3,21 +3,9 @@ import { useAppStore } from '../../store/useAppStore'
 import { useProjectStore, useProjectStoreApi } from '../../store/projectStore'
 import { useTerminal } from '../../hooks/useTerminal'
 import SnippetInput from './SnippetInput'
+import { wrapPastedCode } from './snippetWrap'
 import { PawIcon } from '../KuroCat'
 import TermContextMenu from '../TermContextMenu'
-
-/**
- * Heuristic for "this looks pasted from an editor" rather than typed. Plain
- * indentation is deliberately not a signal on its own — indented prose and
- * pasted logs matched it, and got wrapped in <snippet> against the user's
- * intent. Require actual code punctuation or a keyword.
- */
-function looksLikeCode(data: string): boolean {
-  const lines = data.split('\n')
-  if (lines.length < 3) return false
-  return /[{};()=>]/.test(data)                                                  // 코드 문법 문자
-    || /^\s*(const|let|var|def|fn|func|import|export|class|if|for|return)\b/m.test(data) // 키워드
-}
 
 export default function ClaudePanel() {
   const store = useProjectStoreApi()
@@ -44,9 +32,10 @@ export default function ClaudePanel() {
     // A project started in the background (broadcast) must not steal the keyboard.
     focusOnMount: useAppStore.getState().activeId === projectId,
     onInput: data => {
-      if (looksLikeCode(data) && autoSnippet) {
-        window.kuro.ptyWrite(ptyId, `<snippet>\n${data.trimEnd()}\n</snippet>\n`)
-        log('info', `코드 붙여넣기 → snippet 자동 래핑 (${data.split('\n').length}줄)`)
+      const wrapped = autoSnippet ? wrapPastedCode(data) : null
+      if (wrapped) {
+        window.kuro.ptyWrite(ptyId, wrapped.data)
+        log('info', `코드 붙여넣기 → snippet 자동 래핑 (${wrapped.lines}줄)`)
       } else {
         window.kuro.ptyWrite(ptyId, data)
       }
