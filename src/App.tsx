@@ -31,7 +31,9 @@ export default function App() {
       } else if (e.key === 'b' && !e.shiftKey) {
         useAppStore.getState().toggleSidebarHidden()
       } else if (e.key === 'Enter' && e.shiftKey) {
-        const { broadcastOpen, setBroadcastOpen } = useAppStore.getState()
+        const { broadcastOpen, setBroadcastOpen, sidebarHidden, toggleSidebarHidden } = useAppStore.getState()
+        // The button lives in the project bar, so reveal it before opening the panel.
+        if (!broadcastOpen && sidebarHidden) toggleSidebarHidden()
         setBroadcastOpen(!broadcastOpen)
       } else {
         handled = false

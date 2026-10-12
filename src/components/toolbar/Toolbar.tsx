@@ -1,7 +1,6 @@
 import { useAppStore } from '../../store/useAppStore'
 import { useProjectStore } from '../../store/projectStore'
 import KuroCat, { PawIcon } from '../KuroCat'
-import BroadcastButton from './BroadcastButton'
 import LocalAiButton from './LocalAiButton'
 import ToolbarActions from './ToolbarActions'
 import UsageChips from './UsageChips'
@@ -111,8 +110,6 @@ export default function Toolbar() {
       )}
 
       <UsageChips usage={usage} codexAvailable={codexAvailable} />
-
-      <BroadcastButton />
 
       <LocalAiButton />
 

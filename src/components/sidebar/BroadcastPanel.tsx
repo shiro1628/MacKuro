@@ -3,12 +3,12 @@ import { useStore } from 'zustand'
 import { useAppStore, type Workspace } from '../../store/useAppStore'
 import { WORKING_WINDOW_MS } from '../../store/projectStore'
 import { broadcastPrompt, useBroadcastStore, type DeliveryStatus } from '../../store/broadcast'
+import BroadcastHistory from './BroadcastHistory'
+import BroadcastPresets from './BroadcastPresets'
+import { btnAccent, btnNeutral } from './broadcastStyles'
 
-const panelClass = 'absolute right-0 top-full mt-2 z-50 w-[420px] max-h-[80vh] overflow-y-auto rounded-xl border border-surface-border bg-surface-1 p-3 shadow-2xl'
+const panelClass = 'absolute left-full bottom-2 ml-2 z-50 w-[420px] max-h-[80vh] overflow-y-auto rounded-xl border border-surface-border bg-surface-1 p-3 shadow-2xl'
 
-const btn = 'px-2 py-0.5 text-[11px] rounded border transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap'
-const btnNeutral = `${btn} border-surface-border text-gray-400 hover:text-gray-200 hover:border-gray-500`
-const btnAccent = `${btn} border-accent/40 text-accent hover:bg-accent/10 active:bg-accent/20`
 
 /** Re-render every second so "working" fades to idle without new output. */
 function useNow() {
@@ -86,12 +86,23 @@ export default function BroadcastPanel() {
     setPrompt('')
   }
 
+  /** Load a saved or past prompt into the editor, caret at the end. */
+  const loadPrompt = (text: string) => {
+    setPrompt(text)
+    requestAnimationFrame(() => {
+      const el = inputRef.current
+      if (el) { el.focus(); el.setSelectionRange(text.length, text.length) }
+    })
+  }
+
   return (
     <div className={panelClass}>
       <header className="flex items-center gap-2 mb-2">
         <span className="text-xs font-semibold text-gray-200">일괄 전송</span>
         <span className="text-[10px] text-gray-600">선택한 프로젝트의 Claude에 같은 프롬프트를 보냅니다</span>
       </header>
+
+      <BroadcastPresets prompt={prompt} onPick={loadPrompt} />
 
       <textarea
         ref={inputRef}
@@ -124,6 +135,8 @@ export default function BroadcastPanel() {
           <ProjectRow key={p.id} workspace={p} checked={!excluded.has(p.id)} onToggle={() => toggle(p.id)} now={now} />
         ))}
       </div>
+
+      <BroadcastHistory onLoad={loadPrompt} />
     </div>
   )
 }

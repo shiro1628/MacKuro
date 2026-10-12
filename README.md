@@ -13,9 +13,16 @@ Claude 터미널, Codex Review, Worktree 변경사항, Dev Server 터미널과 �
 
 ![프로젝트 바를 닫은 화면](docs/mackuro-sidebar-hidden.png)
 
+프로젝트 바 아래의 `일괄` 버튼이나 `⌘⇧↵`로 일괄 전송 패널을 엽니다. 체크한 프로젝트의 Claude에 같은 프롬프트를 한 번에 보내고,
+자주 쓰는 프롬프트는 프리셋으로 저장해 클릭 한 번으로 불러옵니다(✎로 이름·내용 수정, 삭제).
+아래 전송 기록에는 언제 어떤 프롬프트를 어느 프로젝트에 보냈고 결과가 어땠는지 최근 30건이 남으며, 클릭하면 다시 불러오거나 프리셋으로 저장할 수 있습니다.
+
+![일괄 전송 패널 — 프리셋과 전송 기록](docs/mackuro-broadcast.png)
+
 ## 구성
 
 - 프로젝트 바: 여러 프로젝트를 동시에 열고 전환 (각 프로젝트의 Claude·터미널은 계속 실행)
+- 일괄 전송: 여러 프로젝트의 Claude에 같은 프롬프트 전송, 프롬프트 프리셋과 전송 기록
 - Claude Code: macOS zsh 기반 인터랙티브 터미널
 - Codex: `codex exec` 기반 Review / Research 패널
 - Dev Server: 여러 개의 독립적인 zsh 터미널 탭
@@ -31,6 +38,7 @@ Claude 터미널, Codex Review, Worktree 변경사항, Dev Server 터미널과 �
 | `⌘O` | 프로젝트 열기 |
 | `⌘⇧W` | 현재 프로젝트 닫기 |
 | `⌘B` | 프로젝트 바 열기 / 닫기 |
+| `⌘⇧↵` | 일괄 전송 패널 열기 / 닫기 |
 
 ## 요구사항
 

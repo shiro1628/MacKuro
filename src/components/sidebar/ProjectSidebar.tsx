@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from 'zustand'
 import { closeProject, pickAndOpenProject, useAppStore, type Workspace } from '../../store/useAppStore'
 import { WORKING_WINDOW_MS } from '../../store/projectStore'
+import BroadcastButton from './BroadcastButton'
 
 const EXPANDED_WIDTH = 220
 // Wide enough to keep the macOS traffic lights clear.
@@ -36,7 +37,7 @@ export default function ProjectSidebar() {
 
   return (
     <aside
-      className="flex flex-col flex-shrink-0 bg-surface-1 border-r border-surface-border transition-[width] duration-150"
+      className="relative flex flex-col flex-shrink-0 bg-surface-1 border-r border-surface-border transition-[width] duration-150"
       style={{ width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH, borderRightColor: '#1a1a1a' }}
     >
       {/* Traffic-light strip doubles as the window drag handle */}
@@ -76,6 +77,7 @@ export default function ProjectSidebar() {
           <span className="text-sm leading-none">+</span>
           {!collapsed && '프로젝트 열기'}
         </button>
+        <BroadcastButton collapsed={collapsed} />
         <button
           onClick={toggleSidebar}
           title={collapsed ? '사이드바 펼치기' : '사이드바 접기'}

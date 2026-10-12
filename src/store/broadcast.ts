@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { WORKING_WINDOW_MS, type ProjectState, type ProjectStore } from './projectStore'
 import { useAppStore, type Workspace } from './useAppStore'
+import { useBroadcastLibrary } from './broadcastLibrary'
 
 // Claude's TUI prints its banner in bursts; this much silence means the prompt is up.
 const SETTLE_MS = 1500
@@ -59,13 +60,15 @@ async function ensureClaude(ws: Workspace): Promise<string | null> {
   return up ? null : 'Claude 시작 시간 초과'
 }
 
-async function deliver(ws: Workspace, prompt: string) {
+async function deliver(ws: Workspace, prompt: string, entryId: string) {
   const { setResult } = useBroadcastStore.getState()
+  const { setOutcome } = useBroadcastLibrary.getState()
   const error = await ensureClaude(ws)
   // The project may have been closed while Claude was starting.
   if (!useAppStore.getState().projects.some(p => p.id === ws.id)) return
   if (error) {
     setResult(ws.id, { kind: 'failed', reason: error })
+    setOutcome(entryId, ws.path, 'failed', error)
     return
   }
   const s = ws.store.getState()
@@ -74,6 +77,7 @@ async function deliver(ws: Workspace, prompt: string) {
   window.kuro.ptyWrite(s.claudePtyId, `\x1b[200~${prompt}\x1b[201~\r`)
   s.log('info', `일괄 전송: ${prompt.split('\n')[0].slice(0, 60)}`)
   setResult(ws.id, { kind: 'sent', queued })
+  setOutcome(entryId, ws.path, queued ? 'queued' : 'sent')
 }
 
 /** Send one prompt to the Claude terminal of each given project. */
@@ -82,5 +86,6 @@ export function broadcastPrompt(projectIds: string[], prompt: string) {
   if (!text) return
   useBroadcastStore.getState().clear()
   const targets = useAppStore.getState().projects.filter(p => projectIds.includes(p.id))
-  for (const ws of targets) deliver(ws, text)
+  const entryId = useBroadcastLibrary.getState().logBroadcast(text, targets.map(t => ({ path: t.path, name: t.name })))
+  for (const ws of targets) deliver(ws, text, entryId)
 }
