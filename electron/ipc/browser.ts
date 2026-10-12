@@ -1,11 +1,16 @@
 import { app, ipcMain } from 'electron'
 import { spawn as spawnChild, type ChildProcess } from 'child_process'
 import { existsSync } from 'fs'
+import { request } from 'http'
 import { join } from 'path'
 import { CDP_PORT } from '../constants'
 import { send } from '../window'
-import { getCdpEndpoint, injectMcp, setCdpEndpoint } from './mcp'
+import { getCdpEndpoint, setCdpEndpoint } from './mcp'
 
+const CDP_READY_TIMEOUT_MS = 8000
+const CDP_POLL_MS = 250
+
+/** Chrome MacKuro launched itself; null when attached to a user's browser or off. */
 let browserProc: ChildProcess | null = null
 
 // Find a macOS browser application binary.
@@ -17,11 +22,44 @@ function findBrowser(): string | null {
   return candidates.find(p => existsSync(p)) ?? null
 }
 
-function stopBrowser() {
-  if (browserProc) {
-    try { browserProc.kill() } catch {}
-    browserProc = null
+/** True when a CDP server answers on the shared-browser port. */
+function cdpReachable(): Promise<boolean> {
+  return new Promise(resolve => {
+    const req = request({ host: '127.0.0.1', port: CDP_PORT, path: '/json/version', timeout: 800 }, res => {
+      res.resume()
+      resolve(res.statusCode === 200)
+    })
+    req.on('error', () => resolve(false))
+    req.on('timeout', () => { req.destroy(); resolve(false) })
+    req.end()
+  })
+}
+
+/** Wait until CDP answers, or give up when the timeout passes or `proc` exits. */
+async function waitForCdp(proc: ChildProcess): Promise<boolean> {
+  const deadline = Date.now() + CDP_READY_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    if (proc.exitCode !== null || proc.signalCode !== null) return false
+    if (await cdpReachable()) return true
+    await new Promise(r => setTimeout(r, CDP_POLL_MS))
+  }
+  return false
+}
+
+/**
+ * Stop sharing the browser: kill the Chrome MacKuro launched, or just detach
+ * from a browser the user started. Safe to call when nothing is running.
+ */
+export function stopBrowser() {
+  const proc = browserProc
+  browserProc = null
+  if (proc) {
+    proc.removeAllListeners('exit')
+    try { proc.kill() } catch {}
+  }
+  if (proc || getCdpEndpoint()) {
     setCdpEndpoint(null)
+    send('browser:stopped')
   }
 }
 
@@ -29,34 +67,19 @@ function stopBrowser() {
 export function registerBrowserIpc() {
   // Check if a CDP endpoint is already reachable
   ipcMain.handle('browser:detect', async () => {
-    try {
-      const { request } = await import('http')
-      const reachable = await new Promise<boolean>(resolve => {
-        const req = request({ host: '127.0.0.1', port: CDP_PORT, path: '/json/version', timeout: 800 }, res => {
-          resolve(res.statusCode === 200)
-        })
-        req.on('error', () => resolve(false))
-        req.on('timeout', () => { req.destroy(); resolve(false) })
-        req.end()
-      })
-      return { running: reachable, endpoint: reachable ? `http://localhost:${CDP_PORT}` : null }
-    } catch {
-      return { running: false, endpoint: null }
-    }
+    const running = await cdpReachable()
+    return { running, endpoint: running ? `http://localhost:${CDP_PORT}` : null }
   })
 
-  ipcMain.handle('browser:connect', async (_, { projectPath, endpoint }: { projectPath: string; endpoint: string }) => {
-    // Connect Playwright MCP to an already-running browser (user-launched)
+  // Attach Playwright MCP to a browser the user already runs with CDP on.
+  ipcMain.handle('browser:connect', async (_, { endpoint }: { projectPath: string; endpoint: string }) => {
+    stopBrowser()
     setCdpEndpoint(endpoint)
-    if (projectPath) {
-      try { injectMcp() } catch {}
-    }
     send('browser:launched', { port: CDP_PORT, url: '', connected: true })
     return { success: true }
   })
 
-  ipcMain.handle('browser:launch', async (_, { projectPath, url }: { projectPath: string; url?: string }) => {
-    // Kill existing browser if any
+  ipcMain.handle('browser:launch', async (_, { url }: { projectPath: string; url?: string }) => {
     stopBrowser()
 
     const exe = findBrowser()
@@ -68,42 +91,40 @@ export function registerBrowserIpc() {
       `--user-data-dir=${userDataDir}`,
       '--no-first-run',
       '--no-default-browser-check',
-      '--disable-extensions-except=',
       url ?? 'about:blank',
     ]
 
-    browserProc = spawnChild(exe, args, { detached: false, stdio: 'ignore' })
-    setCdpEndpoint(`http://localhost:${CDP_PORT}`)
+    const proc = spawnChild(exe, args, { detached: false, stdio: 'ignore' })
+    proc.on('error', () => {})
+    browserProc = proc
 
-    browserProc.on('exit', () => {
+    if (!await waitForCdp(proc)) {
+      if (browserProc === proc) browserProc = null
+      try { proc.kill() } catch {}
+      return { success: false, error: `CDP :${CDP_PORT}가 응답하지 않습니다 — 포트를 다른 프로그램이 쓰고 있을 수 있습니다` }
+    }
+    // Another launch or a stop may have replaced this one while we waited.
+    if (browserProc !== proc) return { success: false, error: '브라우저 실행이 취소되었습니다' }
+
+    proc.on('exit', () => {
+      if (browserProc !== proc) return
       browserProc = null
       setCdpEndpoint(null)
       send('browser:stopped')
     })
-
-    // Re-inject MCP with CDP endpoint so Claude connects to this browser
-    if (projectPath) {
-      try { injectMcp() } catch {}
-    }
-
-    // Small delay for Chrome to start the CDP server
-    await new Promise(r => setTimeout(r, 800))
+    setCdpEndpoint(`http://localhost:${CDP_PORT}`)
     send('browser:launched', { port: CDP_PORT, url: url ?? '' })
-
     return { success: true, port: CDP_PORT }
   })
 
-  ipcMain.handle('browser:stop', async (_, { projectPath }: { projectPath: string }) => {
+  ipcMain.handle('browser:stop', async () => {
     stopBrowser()
-    // Re-inject MCP without CDP so it falls back to standalone headed mode
-    if (projectPath) {
-      try { injectMcp() } catch {}
-    }
     return { success: true }
   })
 
+  // Shared means Claude is pointed at a CDP endpoint, whoever launched the browser.
   ipcMain.handle('browser:status', async () => ({
-    running: !!browserProc,
+    running: !!getCdpEndpoint(),
     port: getCdpEndpoint() ? CDP_PORT : null,
   }))
 }

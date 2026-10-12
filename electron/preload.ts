@@ -38,10 +38,6 @@ const api = {
   // Dialog
   openFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:openFolder'),
 
-  // MCP
-  mcpInject: (projectPath: string): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('mcp:inject', { projectPath }),
-
   // Git
   gitDiff: (projectPath: string): Promise<{ diff: string; empty: boolean }> =>
     ipcRenderer.invoke('git:diff', { projectPath }),

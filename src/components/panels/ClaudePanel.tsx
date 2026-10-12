@@ -22,7 +22,8 @@ export default function ClaudePanel() {
   const { containerRef, termRef } = useTerminal({
     ptyId,
     cwd: project?.path ?? '',
-    spawnArgs: ['-l', '-i', '-c', 'claude'],
+    // MacKuro's Playwright MCP goes to this session only (see electron/ipc/mcp.ts).
+    spawnArgs: ['-l', '-i', '-c', 'claude --mcp-config "$KURO_MCP_CONFIG"'],
     enabled: !!project,
     restartKey: `${project?.path}:${claudeRestartSignal}`,
     fontSize: 13,

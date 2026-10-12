@@ -104,8 +104,7 @@ export function logToActive(type: ConsoleEntry['type'], message: string) {
 
 /**
  * Open a project in a new sidebar slot, or bring it forward if it is already
- * open. MCP inject and dev server detection finish before the panels mount so
- * Claude starts with the config already written.
+ * open. Dev server detection finishes before the panels mount.
  */
 export async function openProject(path: string, activate = true) {
   const { projects, setActive, addProject } = useAppStore.getState()
@@ -116,18 +115,7 @@ export async function openProject(path: string, activate = true) {
   }
 
   const ws = addProject(path, activate)
-  const { setDevServerCommand, log } = ws.store.getState()
-  const [cmd, mcpResult] = await Promise.all([
-    window.kuro.devserverDetect(path),
-    window.kuro.mcpInject(path),
-  ])
-
-  setDevServerCommand(cmd)
-  if (mcpResult.success) {
-    log('success', `Playwright MCP configured → ${path}`)
-  } else {
-    log('warn', `MCP inject failed: ${mcpResult.error}`)
-  }
+  ws.store.getState().setDevServerCommand(await window.kuro.devserverDetect(path))
   ws.store.setState({ ready: true })
 }
 

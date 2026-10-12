@@ -3,7 +3,9 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import { registerServerIpc, startHttpServer, stopHttpServer } from './http-server'
 import { registerIpc } from './ipc'
+import { stopBrowser } from './ipc/browser'
 import { stopManagedComfy } from './ipc/comfyui'
+import { initMcpConfig } from './ipc/mcp'
 import { killAllPtys } from './ipc/pty'
 import { removeTokenFile, writeTokenFile } from './token'
 import { createWindow } from './window'
@@ -22,15 +24,27 @@ app.whenReady().then(() => {
     const dockIcon = join(app.getAppPath(), 'resources', 'icon.png')
     if (existsSync(dockIcon)) app.dock?.setIcon(dockIcon)
   }
+  initMcpConfig()
   createWindow()
   writeTokenFile()
   startHttpServer()
 })
 
-app.on('window-all-closed', () => {
+let cleanedUp = false
+/** Stop everything MacKuro started. ⌘Q skips window-all-closed, so this also runs on will-quit. */
+function cleanup() {
+  if (cleanedUp) return
+  cleanedUp = true
   killAllPtys()
+  stopBrowser()
   stopManagedComfy()
   stopHttpServer()
   removeTokenFile()
+}
+
+app.on('window-all-closed', () => {
+  cleanup()
   app.quit()
 })
+
+app.on('will-quit', cleanup)

@@ -28,7 +28,7 @@ Claude 터미널, Codex Review, Worktree 변경사항, Dev Server 터미널과 �
 - Dev Server: 여러 개의 독립적인 zsh 터미널 탭
 - 공유 브라우저: Chrome 또는 Edge CDP 연결
 - Agy IDE 확장: 코드와 진단 정보를 MacKuro로 전송
-- Playwright MCP: Claude용 MCP 설정 자동 갱신
+- Playwright MCP: MacKuro가 띄운 Claude에만 `--mcp-config`로 전달 (전역 `~/.claude.json`은 건드리지 않음)
 
 ## 단축키
 
@@ -79,4 +79,4 @@ MacKuro 앱이 실행되면 확장이 `127.0.0.1:7890`으로 선택 코드와 �
 
 ## 주요 흐름
 
-프로젝트를 열면 `package.json`의 `dev`, `start`, `serve`, `preview` 스크립트를 감지하고 Playwright MCP를 설정한 뒤 Claude와 첫 번째 Dev Server 터미널을 실행합니다. Codex 패널에서는 변경사항 리뷰, 기술 리서치, 터미널 선택 영역 전송을 사용할 수 있습니다.
+프로젝트를 열면 `package.json`의 `dev`, `start`, `serve`, `preview` 스크립트를 감지하고, MacKuro 전용 Playwright MCP 설정으로 Claude와 첫 번째 Dev Server 터미널을 실행합니다. Codex 패널에서는 변경사항 리뷰, 기술 리서치, 터미널 선택 영역 전송을 사용할 수 있습니다.

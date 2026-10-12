@@ -4,7 +4,6 @@ import { registerCodexIpc } from './codex'
 import { registerDevServerIpc } from './devserver'
 import { registerGitIpc } from './git'
 import { registerLocalAiIpc } from './local-ai'
-import { registerMcpIpc } from './mcp'
 import { registerPtyIpc } from './pty'
 import { registerSystemIpc } from './system'
 import { registerUsageIpc } from './usage'
@@ -14,7 +13,6 @@ export function registerIpc() {
   registerPtyIpc()
   registerAgyIdeIpc()
   registerSystemIpc()
-  registerMcpIpc()
   registerBrowserIpc()
   registerGitIpc()
   registerDevServerIpc()

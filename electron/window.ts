@@ -10,7 +10,7 @@ export function getMainWindow(): BrowserWindow | null {
 
 /** Push an event to the renderer. A no-op once the window is gone. */
 export function send(channel: string, ...args: unknown[]) {
-  mainWindow?.webContents.send(channel, ...args)
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, ...args)
 }
 
 export function createWindow() {
